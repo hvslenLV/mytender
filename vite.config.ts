@@ -1,10 +1,8 @@
 import { defineConfig, type HtmlTagDescriptor, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-
-import siteConfiguration from './.figma/make/site.json'
-
 
 // Vite config — https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -20,14 +18,14 @@ export default defineConfig(({ mode }) => {
     plugins: [
 react(),
       tailwindcss(),
-      figmaSiteConfiguration(siteConfiguration),
+      figmaSiteConfiguration(loadSiteConfiguration()),
       figmaErrorOverlayReplay(),
       figmaReactRefreshBoundaryFallback(),
       figmaMakeKitPlugin({ storiesGlob: '/src/**/*.stories.{ts,tsx,js,jsx}' }),
     ],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, './src'),
+        '@': path.resolve(__dirname, '.'),
       },
     },
     server: {
@@ -71,6 +69,17 @@ type FigmaSiteConfiguration = {
   }
   accessibility?: {
     addBypassLinks?: boolean
+  }
+}
+
+function loadSiteConfiguration(): FigmaSiteConfiguration {
+  const siteConfigPath = path.resolve(__dirname, '.figma/make/site.json')
+  if (!existsSync(siteConfigPath)) return {}
+
+  try {
+    return JSON.parse(readFileSync(siteConfigPath, 'utf8')) as FigmaSiteConfiguration
+  } catch {
+    return {}
   }
 }
 
