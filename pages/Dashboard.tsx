@@ -56,7 +56,7 @@ export default function Dashboard({ onNavigate, onOpenCopilot }: DashboardProps)
     [filter, query, sortOrder, tenders],
   )
   const nextTender = tenders.find((tender) => tender.status === 'Ажиллаж байна') ?? tenders[0]
-  const parsedCost = Number(cost.replaceAll(',', ''))
+  const parsedCost = Number(cost.replace(/,/g, ''))
   const parsedMargin = Number(margin)
   const hasValidPriceInput = Number.isFinite(parsedCost) && parsedCost >= 0 && Number.isFinite(parsedMargin) && parsedMargin >= 0
   const proposalPrice = hasValidPriceInput ? Math.round(parsedCost * (1 + parsedMargin / 100)) : 0
