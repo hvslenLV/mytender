@@ -45,6 +45,8 @@ export default function Dashboard({ onNavigate, onOpenCopilot }: DashboardProps)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<'Бүгд' | Tender['status']>('Бүгд')
   const [sortOrder, setSortOrder] = useState<SortOrder>('deadline')
+  const [cost, setCost] = useState('10000000')
+  const [margin, setMargin] = useState('15')
   const visibleTenders = useMemo(
     () => tenders
       .filter((tender) => (filter === 'Бүгд' || tender.status === filter) && `${tender.title} ${tender.organization}`.toLowerCase().includes(query.toLowerCase()))
@@ -54,6 +56,11 @@ export default function Dashboard({ onNavigate, onOpenCopilot }: DashboardProps)
     [filter, query, sortOrder, tenders],
   )
   const nextTender = tenders.find((tender) => tender.status === 'Ажиллаж байна') ?? tenders[0]
+  const parsedCost = Number(cost.replaceAll(',', ''))
+  const parsedMargin = Number(margin)
+  const hasValidPriceInput = Number.isFinite(parsedCost) && parsedCost >= 0 && Number.isFinite(parsedMargin) && parsedMargin >= 0
+  const proposalPrice = hasValidPriceInput ? Math.round(parsedCost * (1 + parsedMargin / 100)) : 0
+  const formatMoney = (value: number) => new Intl.NumberFormat('mn-MN').format(value)
 
   function addTender() {
     const number = tenders.length + 1
@@ -105,6 +112,14 @@ export default function Dashboard({ onNavigate, onOpenCopilot }: DashboardProps)
         <section className="mt-4 flex flex-col gap-4 rounded-card border border-teal-400/20 bg-teal-400/6 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div><p className="font-mono text-xs text-teal-300">MYTENDER PRO</p><h2 className="mt-1 font-display text-lg font-bold">Бэлэн байдлын тайлангаа шууд илгээ</h2><p className="mt-1 text-sm text-slate-400">Удирдлага эсвэл харилцагчид зориулсан тендерийн товч тайлан татаж аваарай.</p></div>
           <button className="btn-primary shrink-0" onClick={downloadReadinessReport}>Тайлан татах ↓</button>
+        </section>
+        <section className="mt-4 grid gap-4 rounded-card border border-white/7 bg-navy-900/45 p-5 lg:grid-cols-[1fr_1.1fr]">
+          <div><p className="font-mono text-xs text-teal-400">САНАЛЫН ҮНЭ ТООЦООЛОГЧ</p><h2 className="mt-1 font-display text-lg font-bold">Ашигтай саналын үнийг шууд тооц</h2><p className="mt-1 text-sm leading-6 text-slate-400">Өртөг болон зорилтот ашгаа оруулаад тендерийн саналын баримжаа үнийг гаргаарай.</p></div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="text-sm text-slate-300">Нийт өртөг (₮)<input inputMode="numeric" className="mt-1 w-full rounded-button border border-white/10 bg-white/5 px-3 py-2 text-slate-100 outline-none focus:border-teal-400" value={cost} onChange={(event) => setCost(event.target.value.replace(/[^\d,]/g, ''))} /></label>
+            <label className="text-sm text-slate-300">Зорилтот ашиг (%)<input inputMode="decimal" className="mt-1 w-full rounded-button border border-white/10 bg-white/5 px-3 py-2 text-slate-100 outline-none focus:border-teal-400" value={margin} onChange={(event) => setMargin(event.target.value.replace(/[^\d.]/g, ''))} /></label>
+            <div className="rounded-button border border-teal-400/20 bg-teal-400/10 px-4 py-3 sm:col-span-2"><p className="text-xs text-teal-300">САНАЛ БОЛГОХ ҮНЭ</p><p className="mt-1 font-display text-2xl font-bold text-white">{hasValidPriceInput ? `${formatMoney(proposalPrice)} ₮` : 'Утгаа зөв оруулна уу'}</p><p className="mt-1 text-xs text-slate-400">{hasValidPriceInput ? `Тооцоолсон ашиг: ${formatMoney(proposalPrice - parsedCost)} ₮` : 'Өртөг болон ашиг 0-ээс багагүй байх ёстой.'}</p></div>
+          </div>
         </section>
         {nextTender && (
           <section className="mt-4 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
