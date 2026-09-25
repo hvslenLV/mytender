@@ -60,6 +60,32 @@ export default function Dashboard({ onNavigate, onOpenCopilot }: DashboardProps)
     setTenders((items) => [{ id: `draft-${Date.now()}`, title: `Шинэ тендер #${number}`, organization: 'Байгууллага сонгоогүй', deadline: 'Хугацаа тодорхойгүй', status: 'Шинэ', progress: 0 }, ...items])
   }
 
+  function downloadReadinessReport() {
+    const reportDate = new Intl.DateTimeFormat('mn-MN', { dateStyle: 'long' }).format(new Date())
+    const report = [
+      'MYTENDER PRO — БЭЛЭН БАЙДЛЫН ТАЙЛАН',
+      `Үүсгэсэн огноо: ${reportDate}`,
+      '',
+      `Нийт тендер: ${tenders.length}`,
+      `Идэвхтэй ажил: ${tenders.filter((tender) => tender.status === 'Ажиллаж байна').length}`,
+      `Дундаж бэлэн байдал: ${Math.round(tenders.reduce((sum, tender) => sum + tender.progress, 0) / tenders.length)}%`,
+      '',
+      'ТЕНДЕРИЙН ТОЙМ',
+      ...tenders.flatMap((tender, index) => {
+        const deadline = getDeadlineInfo(tender.deadline)
+        const nextStep = tender.progress < 40 ? 'Шаардлага болон баримтын жагсаалтыг эхлүүлэх.' : tender.progress < 80 ? 'Дутуу баримт, эрсдэлийг шалгах.' : 'Эцсийн хяналт болон илгээлтээ бэлтгэх.'
+        return [`${index + 1}. ${tender.title}`, `   Байгууллага: ${tender.organization}`, `   Төлөв: ${tender.status} · Бэлтгэл: ${tender.progress}%`, `   Хугацаа: ${tender.deadline} (${deadline.label})`, `   Дараагийн алхам: ${nextStep}`, '']
+      }),
+      'Энэхүү тайланг mytender Pro-оор үүсгэв.',
+    ].join('\n')
+    const url = URL.createObjectURL(new Blob([report], { type: 'text/plain;charset=utf-8' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'mytender-pro-belend-baidal.txt'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <main className="min-h-screen bg-navy-950 text-slate-100">
       <header className="border-b border-white/8 bg-navy-900/80 px-5 py-4 backdrop-blur md:px-8">
@@ -75,6 +101,10 @@ export default function Dashboard({ onNavigate, onOpenCopilot }: DashboardProps)
         </div>
         <section className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {[['Нийт тендер', String(tenders.length)], ['Идэвхтэй ажил', String(tenders.filter((tender) => tender.status === 'Ажиллаж байна').length)], ['Дундаж бэлэн байдал', `${Math.round(tenders.reduce((sum, tender) => sum + tender.progress, 0) / tenders.length)}%`]].map(([label, value]) => <div className="card-glass rounded-card p-5" key={label}><p className="text-sm text-slate-400">{label}</p><p className="mt-2 font-display text-3xl font-bold">{value}</p></div>)}
+        </section>
+        <section className="mt-4 flex flex-col gap-4 rounded-card border border-teal-400/20 bg-teal-400/6 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div><p className="font-mono text-xs text-teal-300">MYTENDER PRO</p><h2 className="mt-1 font-display text-lg font-bold">Бэлэн байдлын тайлангаа шууд илгээ</h2><p className="mt-1 text-sm text-slate-400">Удирдлага эсвэл харилцагчид зориулсан тендерийн товч тайлан татаж аваарай.</p></div>
+          <button className="btn-primary shrink-0" onClick={downloadReadinessReport}>Тайлан татах ↓</button>
         </section>
         {nextTender && (
           <section className="mt-4 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
